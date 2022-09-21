@@ -21,7 +21,7 @@ contract TestContract is Test {
         nigiri.mint{value: fee}(amount);
     }
 
-    function testMintOne() public {
+    function testMint_One() public {
         for (uint256 i = 0; i < nigiri.MAX_SUPPLY(); i++) {
             uint256 fee = nigiri.currentFee(1);
             assertEq(fee, 0.001 ether * i);
@@ -29,7 +29,7 @@ contract TestContract is Test {
         }
     }
 
-    function testMintFive() public {
+    function testMint_Five() public {
         for (uint256 i = 0; i < nigiri.MAX_SUPPLY() / 5; i++) {
             uint256 fee = nigiri.currentFee(5);
             assertEq(fee, 0.025 ether * i + 0.01 ether);
@@ -37,12 +37,12 @@ contract TestContract is Test {
         }
     }
 
-    function testCannotMintByAmountIsZero() public {
+    function testCannotMint_AmountIsZero() public {
         vm.expectRevert(Nigiri.AmountIsZero.selector);
         nigiri.mint(0);
     }
 
-    function testCannotMintBySoldOut() public {
+    function testCannotMint_SoldOut() public {
         for (uint256 i = 0; i < nigiri.MAX_SUPPLY(); i++) {
             uint256 fee = nigiri.currentFee(1);
             nigiri.mint{value: fee}(1);
@@ -52,7 +52,7 @@ contract TestContract is Test {
         nigiri.mint{value: 1 ether}(1);
     }
 
-    function testCannotMintByLackOfFee() public {
+    function testCannotMint_LackOfFee() public {
         nigiri.mint(1);
 
         vm.expectRevert(Nigiri.LackOfFee.selector);
