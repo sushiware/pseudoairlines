@@ -1,6 +1,6 @@
 # waresushi
 
-![Github Actions](https://github.com/sushiware/waresushi/workflows/CI/badge.svg)
+[![test](https://github.com/sushiware/waresushi/actions/workflows/test.yml/badge.svg)](https://github.com/sushiware/waresushi/actions/workflows/test.yml)
 
 ## Getting Started
 
