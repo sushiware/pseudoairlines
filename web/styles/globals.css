@@ -1,26 +1,23 @@
-html,
-body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@font-face {
+  font-family: "futura_heavy";
+  src: url("../assets/futura/Futura Heavy font.ttf");
+  font-weight: 600;
+  font-style: normal;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+:root {
+  @apply font-futura_heavy bg-yellow-100;
 }
 
-* {
-  box-sizing: border-box;
+.square {
+  width: 100%;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-  body {
-    color: white;
-    background: black;
-  }
+.square:after {
+  content: "";
+  display: block;
+  padding-bottom: 100%;
 }

@@ -3,22 +3,34 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
+    "typechain": "npx typechain --target ethers-v5 --out-dir typechain ../out/**/*.json",
+    "dev": "npm run typechain && next dev",
+    "build": "npm run typechain && next build",
     "start": "next start",
     "lint": "next lint"
   },
   "dependencies": {
+    "@usedapp/core": "^1.1.5",
+    "@walletconnect/web3-provider": "^1.8.0",
+    "dotenv": "^16.0.2",
     "next": "12.3.1",
     "react": "18.2.0",
-    "react-dom": "18.2.0"
+    "react-dom": "18.2.0",
+    "web3": "^1.8.0"
   },
   "devDependencies": {
+    "@typechain/ethers-v5": "^10.1.0",
     "@types/node": "18.7.18",
     "@types/react": "18.0.20",
     "@types/react-dom": "18.0.6",
+    "autoprefixer": "^10.4.12",
     "eslint": "8.23.1",
     "eslint-config-next": "12.3.1",
+    "postcss": "^8.4.16",
+    "tailwindcss": "^3.1.8",
+    "ts-node": "^10.9.1",
+    "tsconfig-paths": "^4.1.0",
+    "typechain": "^8.1.0",
     "typescript": "4.8.3"
   }
 }
