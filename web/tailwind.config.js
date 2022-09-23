@@ -9,6 +9,9 @@ module.exports = {
       fontFamily: {
         futura_heavy: ["futura_heavy"],
       },
+      width: {
+        128: "32rem",
+      },
     },
   },
   plugins: [],

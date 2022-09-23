@@ -2,176 +2,308 @@ import type { NextPage } from "next";
 import Head from "next/head";
 import { useState, useEffect } from "react";
 import { ethers } from "ethers";
-import { Nigiri__factory } from "../typechain/factories/Nigiri__factory";
+import { Airticket__factory } from "../typechain/factories/Airticket__factory";
 import { AppConfig } from "../app.config";
-import { getDefaultProvider } from "@ethersproject/providers";
-import { useEthers, useContractFunction } from "@usedapp/core";
+import { JsonRpcProvider } from "@ethersproject/providers";
+import { useEtherBalance, useEthers, useContractFunction } from "@usedapp/core";
 
 const Home: NextPage = () => {
-  const [amountValue, setAmountValue] = useState("0");
-  const [amount, setAmount] = useState(0);
+  type State =
+    | "connect_wallet"
+    | "connected"
+    | "invalid_network"
+    | "non_enough_ether"
+    | "mintable"
+    | "minting"
+    | "success"
+    | "fail"
+    | "exception";
+
+  const [amount, setAmount] = useState(1);
   const [currentFee, setCurrentFee] = useState(ethers.constants.Zero);
-  const [maxSupply, setMaxSupply] = useState(0);
-  const [totalSupply, setTotalSupply] = useState(0);
-  const [mintMessage, setMintMessage] = useState("Enter amount");
+  const [supply, setSupply] = useState({ max: 0, total: 0 });
+  const [buttonState, setButtonState] = useState({
+    message: "",
+    color: "",
+    disabled: false,
+  });
+  const [state, setState] = useState<State>("connect_wallet");
 
-  const { library, activateBrowserWallet, active } = useEthers();
+  const {
+    library,
+    activateBrowserWallet,
+    account,
+    deactivate,
+    chainId,
+    switchNetwork,
+    error,
+  } = useEthers();
+  const etherBalance = useEtherBalance(account);
 
-  const nigiri = Nigiri__factory.connect(
-    AppConfig.contracts.nigiri,
-    library || getDefaultProvider("")
+  const airticket = Airticket__factory.connect(
+    AppConfig.contracts.airticket,
+    library || new JsonRpcProvider(AppConfig.url)
   );
 
-  const { state: mintState, send: mint } = useContractFunction(nigiri, "mint");
+  const { state: mintState, send: mint } = useContractFunction(
+    airticket,
+    "mint"
+  );
 
   useEffect(() => {
-    const handle = async () => {
-      const max = await nigiri.callStatic.MAX_SUPPLY();
-      setMaxSupply(max.toNumber());
+    if (!error) {
+      return setState("connect_wallet");
+    }
 
-      const total = await nigiri.callStatic.totalSupply();
-      setTotalSupply(total.toNumber());
-    };
+    switch (error.name) {
+      case "ChainIdError":
+        return setState("invalid_network");
+    }
+  }, [error]);
 
-    handle();
+  useEffect(() => {
+    // export type TransactionState = 'None' | 'PendingSignature' | 'Mining' | 'Success' | 'Fail' | 'Exception'
+    switch (mintState.status) {
+      case "Mining":
+        return setState("minting");
+      case "Success":
+        return setState("success");
+      case "Fail":
+        return setState("fail");
+      case "Exception":
+        return setState("exception");
+    }
   }, [mintState]);
 
   useEffect(() => {
     const handle = async () => {
-      if (amount > 0) {
-        const fee = await nigiri.callStatic.currentFee(Number(amount));
-        setCurrentFee(fee);
-      } else {
-        setCurrentFee(ethers.constants.Zero);
+      if (!!error) {
+        return;
+      }
+
+      const maxSupply = await airticket.callStatic.MAX_SUPPLY();
+      const totalSupply = await airticket.callStatic.totalSupply();
+      const max = maxSupply.toNumber();
+      const total = totalSupply.toNumber();
+      setSupply({ max, total });
+    };
+
+    handle();
+  }, [state]);
+
+  useEffect(() => {
+    const handle = async () => {
+      if (!!error) {
+        return;
+      }
+
+      const fee = await airticket.callStatic.currentFee(amount);
+      setCurrentFee(fee);
+    };
+
+    handle();
+  }, [amount, state]);
+
+  useEffect(() => {
+    const handle = async () => {
+      switch (state) {
+        case "invalid_network":
+        case "minting":
+        case "fail":
+        case "exception":
+        case "success":
+          return;
+      }
+
+      if (etherBalance === undefined) {
+        return;
+      }
+
+      if (etherBalance.lt(currentFee)) {
+        setState("non_enough_ether");
+
+        return;
+      }
+
+      setState("mintable");
+    };
+
+    handle();
+  }, [etherBalance, currentFee]);
+
+  useEffect(() => {
+    const handleConnect = async () => {
+      if (!!account) {
+        setState("connected");
+
+        return;
+      }
+
+      setState("connect_wallet");
+    };
+
+    handleConnect();
+  }, [account]);
+
+  useEffect(() => {
+    const handleButtonState = async () => {
+      switch (state) {
+        case "connect_wallet":
+          return setButtonState({
+            message: "Connect wallet",
+            color: "bg-white",
+            disabled: false,
+          });
+        case "connected":
+          return;
+        case "invalid_network":
+          return setButtonState({
+            message: "Invalid network",
+            color: "bg-red-200",
+            disabled: false,
+          });
+        case "non_enough_ether":
+          return setButtonState({
+            message: "Non Ehough Ether",
+            color: "bg-slate-200",
+            disabled: true,
+          });
+        case "mintable":
+          return setButtonState({
+            message: "Mint",
+            color: "bg-white",
+            disabled: false,
+          });
+        case "minting":
+          return setButtonState({
+            message: "Minting",
+            color: "bg-orange-200",
+            disabled: false,
+          });
+        case "success":
+          return setButtonState({
+            message: "Success",
+            color: "bg-green-200",
+            disabled: false,
+          });
+        case "fail":
+          return setButtonState({
+            message: "Fail",
+            color: "bg-red-200",
+            disabled: false,
+          });
+        case "exception":
+          return setState("connected");
       }
     };
 
-    handle();
-  });
+    handleButtonState();
+  }, [state]);
 
-  const handleChangeAmount = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setAmountValue(e.target.value);
-    setMintMessage("Enter amount");
+  const updateAmount = (a: number) => {
+    if (a + supply.total > supply.max) return;
+    if (a < 1) return;
+    setAmount(a);
   };
 
-  const setDelayingMintMessage = (message: string, delayedMessage: string) => {
-    setMintMessage(message);
-    setTimeout(() => {
-      setMintMessage(delayedMessage);
-    }, 2000);
+  const handleButton = async () => {
+    switch (state) {
+      case "connect_wallet":
+        activateBrowserWallet();
+      case "connected":
+        return;
+      case "invalid_network":
+        return switchNetwork(AppConfig.network.chainId);
+      case "non_enough_ether":
+        return;
+      case "mintable":
+        return mint(amount, { value: currentFee });
+      case "minting":
+        return;
+      case "success":
+        return setState("connected");
+      case "fail":
+        return setState("connected");
+      case "exception":
+        return setState("connected");
+    }
   };
-
-  const handleBlur = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const amt = Number(amountValue);
-    if (Number.isNaN(amt)) {
-      setDelayingMintMessage("Invalid amount", "Enter amount");
-      setAmountValue("0");
-      setAmount(0);
-      return;
-    }
-
-    if (amt % 1 !== 0) {
-      setDelayingMintMessage("Invalid amount", "Enter amount");
-      setAmountValue("0");
-      setAmount(0);
-      return;
-    }
-
-    if (amt < 0) {
-      setDelayingMintMessage("Invalid amount", "Enter amount");
-      setAmountValue("0");
-      setAmount(0);
-      return;
-    }
-
-    if (amt + totalSupply > maxSupply) {
-      setDelayingMintMessage("Supply exceeded", "Enter amount");
-      setAmountValue("0");
-      setAmount(0);
-      return;
-    }
-
-    setAmount(amt);
-    if (amt > 0) {
-      setMintMessage("Mint");
-      return;
-    }
-
-    setMintMessage("Enter amount");
-  };
-
-  const handleMint = () => {
-    if (amount == 0) {
-      setDelayingMintMessage("Can't!", "Enter amount");
-      return;
-    }
-    setMintMessage("Minting");
-    mint(amount, { value: currentFee });
-  };
-
-  useEffect(() => {
-    if (mintState.status === "Success") {
-      setMintMessage("Success");
-      return;
-    }
-
-    if (mintState.status === "Fail") {
-      setDelayingMintMessage("Fail", "Mint");
-      return;
-    }
-
-    if (mintState.status === "Exception") {
-      setDelayingMintMessage("Exception", "Mint");
-      return;
-    }
-
-    return;
-  }, [mintState]);
 
   return (
     <div>
       <Head>
-        <title>WARESUSHI</title>
+        <title></title>
         <meta name="description" content="Generated by create next app" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
       <main className="">
-        <div className="bg-white px-4 py-6 text-4xl grid grid-cols-6 gap-0 border-black border-b-4">
-          {/* <div className="col-span-5">WARESUSHI</div> */}
-          <div className="col-span-5"> </div>
-          <div className="text-right" onClick={activateBrowserWallet}>
-            W
+        <div className="bg-white px-4 py-6 grid grid-cols-7 gap-0 border-black border-b-4">
+          <div className="text-4xl col-span-5">
+            pseudo
+            <br />
+            airlines
           </div>
+          <button
+            className="text-2xl col-span-2"
+            onClick={() => {
+              deactivate();
+            }}
+            disabled={!account}
+          >
+            {!!account ? (
+              <>
+                {account.slice(0, 3)}...{account.slice(-2)}
+              </>
+            ) : (
+              ""
+            )}
+          </button>
         </div>
-        <div className="container mx-auto h-full max-w-screen-sm">
-          <div className="container px-4 ">
+        <div className="container mx-auto h-full sm:w-128">
+          <div className="container px-4">
             <div className="square box-border my-4 p-8 bg-white border-black border-4"></div>
             <div className="text-4xl bg-white border-black border-4 text-center py-4 mb-4">
-              {totalSupply}/{maxSupply}
+              {supply.total}/{supply.max}
             </div>
             <div className="text-4xl grid grid-cols-12 gap-4 mb-4">
-              <div className="grid place-items-center bg-white border-black border-4 col-span-7 py-4">
+              <div className="grid place-items-center bg-white border-black border-4 col-span-6 py-4">
                 E {ethers.utils.formatEther(currentFee)}
               </div>
-              <div className="grid place-items-center bg-white border-black border-4 col-span-5 py-4">
-                <input
-                  className="underline w-20"
-                  type="text"
-                  value={`${amountValue}`}
-                  onChange={handleChangeAmount}
-                  onBlur={handleBlur}
-                />
+              <div className="grid place-items-center bg-white border-black border-4 col-span-4 py-4">
+                {amount}
+              </div>
+              <div className="text-2xl grid bg-white border-black border-4 col-span-2">
+                <button
+                  className="col-span-1"
+                  onClick={() => {
+                    updateAmount(amount + 1);
+                  }}
+                  disabled={!!error}
+                >
+                  {!error ? "▲" : " "}
+                </button>
+                <button
+                  className="col-span-1"
+                  onClick={() => {
+                    updateAmount(amount - 1);
+                  }}
+                  disabled={!!error}
+                >
+                  {!error ? "▼" : " "}
+                </button>
               </div>
             </div>
-            <div
-              className="text-4xl bg-white border-black border-4 text-center py-4"
-              onClick={handleMint}
+            <button
+              className={`container text-4xl border-black border-4 text-center py-4 block ${buttonState.color}`}
+              onClick={handleButton}
+              disabled={buttonState.disabled}
             >
-              {mintMessage}
-            </div>
+              {buttonState.message}
+            </button>
           </div>
         </div>
+        <div className="bottom-0 p-2"></div>
       </main>
 
       <footer></footer>

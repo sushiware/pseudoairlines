@@ -2,16 +2,16 @@
 pragma solidity 0.8.13;
 
 import "forge-std/Script.sol";
-import "../src/Nigiri.sol";
+import "../src/Airticket.sol";
 
 contract Deploy is Script {
     function run() external {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         vm.startBroadcast(deployerPrivateKey);
 
-        Nigiri nigiri = new Nigiri();
+        Airticket airticket = new Airticket();
 
-        console.log("nigiri", address(nigiri));
+        console.log("Airticket", address(airticket));
 
         vm.stopBroadcast();
     }

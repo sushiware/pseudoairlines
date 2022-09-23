@@ -5,10 +5,11 @@ import { DAppProvider } from "@usedapp/core";
 import { JsonRpcProvider } from "@ethersproject/providers";
 
 const config = {
-  readOnlyChainId: AppConfig.chainId,
+  readOnlyChainId: AppConfig.network.chainId,
   readOnlyUrls: {
-    [AppConfig.chainId]: new JsonRpcProvider(AppConfig.url),
+    [AppConfig.network.chainId]: new JsonRpcProvider(AppConfig.url),
   },
+  networks: [AppConfig.network],
 };
 
 function MyApp({ Component, pageProps }: AppProps) {

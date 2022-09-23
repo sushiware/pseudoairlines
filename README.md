@@ -1,6 +1,6 @@
-# waresushi
+# pseudoairlines
 
-[![test](https://github.com/sushiware/waresushi/actions/workflows/test.yml/badge.svg)](https://github.com/sushiware/waresushi/actions/workflows/test.yml)
+[![test](https://github.com/sushiware/pseudoairlines/actions/workflows/test.yml/badge.svg)](https://github.com/sushiware/pseudoairlines/actions/workflows/test.yml)
 
 ## Getting Started
 

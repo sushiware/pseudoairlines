@@ -4,14 +4,14 @@ pragma solidity 0.8.13;
 import {ERC721A} from "erc721a/contracts/ERC721A.sol";
 import {Address} from "@openzeppelin/contracts/utils/Address.sol";
 
-contract Nigiri is ERC721A {
+contract Airticket is ERC721A {
     error AmountIsZero();
     error SoldOut();
     error LackOfFee();
 
     uint256 public constant MAX_SUPPLY = 100;
 
-    constructor() ERC721A("Nigiri", "NIGIRI") {}
+    constructor() ERC721A("Airticket", "AIRTICKET") {}
 
     function mint(uint256 amount) external payable {
         if (amount == 0) {
