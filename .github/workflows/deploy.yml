@@ -1,0 +1,50 @@
+name: deploy
+ 
+on:
+ push:
+   branches:
+     - main
+ workflow_dispatch:
+ 
+jobs:
+ vercel:
+    strategy:
+      fail-fast: true
+      matrix:
+        network: ["goerli"]
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: nightly
+
+      - name: Run Forge build
+        run: |
+          forge --version
+          forge build --sizes
+        id: build
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+
+      - name: Run Next build
+        run: |
+          NETWORK=${{ matrix.network }} npm run build
+ 
+     - name: "Deploy application"
+       run: |
+         npx vercel --token ${VERCEL_TOKEN}
+       env:
+         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}

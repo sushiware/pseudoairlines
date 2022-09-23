@@ -12,17 +12,19 @@ const load = () => {
       networkName = "goerli";
   }
 
+  console.log("networkName", networkName, process.env.NETWORK);
+
   const url = {
     "": "http://127.0.0.1:8545",
     homestead: process.env.MAINNET_RPC_URL || "",
-    goerli: process.env.GOERLI_URL || "",
+    goerli: process.env.GOERLI_RPC_URL || "",
   }[networkName];
 
   const contracts = {
     airticket: {
       "": "0x5fbdb2315678afecb367f032d93f642f64180aa3",
       homestead: "",
-      goerli: "",
+      goerli: "0x79E4f1353741f2a8bC558285fB39326C4a6f6f9f",
     }[networkName],
   };
 

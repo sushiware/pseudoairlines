@@ -11,8 +11,6 @@ contract Deploy is Script {
 
         Airticket airticket = new Airticket();
 
-        console.log("Airticket", address(airticket));
-
         vm.stopBroadcast();
     }
 }
